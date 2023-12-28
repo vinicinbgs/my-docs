@@ -44,6 +44,10 @@ const config = {
           // Remove this to remove the "edit this page" links.
           editUrl:
             "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/",
+          admonitions: {
+            keywords: ["note", "tip", "info", "warning", "danger", "youknow"],
+            extendDefaults: true,
+          },
         },
         blog: {
           showReadingTime: true,
@@ -136,6 +140,10 @@ const config = {
         additionalLanguages: ["bash", "diff", "json"],
       },
     }),
+  markdown: {
+    mermaid: true,
+  },
+  themes: ["@docusaurus/theme-mermaid"],
 };
 
 module.exports = config;
