@@ -1,0 +1,42 @@
+name: Deploy Markdown to gh-pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v2
+      with:
+        ref: main
+
+    - name: Copy Markdown files
+      run: |
+        npm install
+        npm run build
+        mkdir -p ${{ github.workspace }}/tmp-markdown
+        cp -R ${{ github.workspace }}/build/* ${{ github.workspace }}/tmp-markdown/
+
+    - name: Checkout gh-pages branch
+      uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Update gh-pages branch
+      run: |
+        cp -R ${{ github.workspace }}/tmp-markdown/* ./gh-pages/ # Copy Markdown to gh-pages
+        cd gh-pages
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .
+        git commit -m "Update Markdown files" || echo "No changes to commit"
+        git push
+
+    - name: Clean up
+      run: rm -rf ${{ github.workspace }}/tmp-markdown
