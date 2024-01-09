@@ -65,6 +65,26 @@ Nygard explora estratégias para garantir a disponibilidade contínua de sistema
 
 
 -------
+#### Defining stability (pg 24-25)
+The terms impulse and stress come from mechanical engineering. An impulse is a rapid shock to the system. An impulse to the system is when something whacks it with a hammer.
+In contrast, stress to the system is a force applied to the system over an extended period.
+
+Examples:
+A flash mob pounding the PS6 product detail page, thanks to a rumor that such a thing exists, cause an impulse. Ten thousand new sessions, all arriving within one minute of each other, is very difficult for any service instance to withstand.
+A celebrity tweet about your site is an impulse. Dumping twelve million messages into a queue at midnight on November 21 is an impulse. These thing can facture the system in the blink of an eye.
+
+On the other hand, getting slow response from your credit card processor because it doesn't have enough capacity for all of its customers is a stress to the system. In a mechanical system, a material changes shape when stress is applied.
+This change in shape is called the `strain`. Stress produces strain. The same thing happens with computer systems. The stress from the credit card processor will cause strain to propagate to other parts of the system, which can produce odd effects.
+It could manifest as higher RAM usage on the web servers or excess I/O rates on the database server or as some other far distant effect.
+
+So how do you find these kinds of bugs? The only way you can catch them before they bite you in production is to run your own longevity tests. If you can, set aside a developer machine. Have it run JMeter, Marathon, or some other load-testing tool.
+Don't hit the system hard; just keep driving requests all the time. (Also, be sure to have the scripts slack for a few hours a day to simulate the slow period during the middle of the night. That will catch connection pool and firewall timeouts.)
+
+#### Chain of Failure (pg 29)
+
+Underneath  every  system  outage  is  a  chain  of  events  like  this.  One  small
+issue leads to another, which leads to another. Looking at the entire chain
+of failure after the fact, the failure seems inevitable.
 
 Fault: A condition that creates an incorrect internal state in your software.
 A fault may be due to a latent bug that gets triggered, or it may be due
@@ -156,12 +176,14 @@ example, your ISP may inject an HTML page when your DNS lookup fails.)
 • The provider may claim to be sending JSON but actually sending plain
 text. Or kernel binaries. Or Weird Al Yankovic MP3s.
 
+---
+
+### Countering Integration Point Problems (pg 45)
+
 #### What can you do to make integration points safer? 
 The most effective stability patterns to combat integration point failures are Circuit Breaker and Decoupling Middleware.
 
 Testing helps, too. Cynical software should handle violations of form and function, such as badly formed headers or abruptly closed connections. To make sure your software is cynical enough, you should make a test harness —a simulator that provides controllable behavior—for each integration test.
-
-### Countering Integration Point Problems
 
 ##### Beware this necessary evil.
 Every integration point will eventually fail in some way, and you need to
@@ -201,7 +223,9 @@ machines provides you with fault tolerance through redundancy. A single
 machine or process can completely bonk while the remainder continues
 serving transactions.
 
-### Chain Reactions
+---
+
+### Chain Reactions (pg 46)
 
 ##### Recognize that one server down jeopardizes the rest.
 A chain reaction happens because the death of one server makes the
@@ -234,9 +258,9 @@ reactions from taking out the entire service—though they won’t help the
 callers of whichever partition does go down. Use Circuit Breaker on the
 calling side for that.
 
+---
 
-
-### Cascading Failures
+### Cascading Failures (pg 49)
 Just as integration points are the number-one source of cracks, cascading
 failures are the number-one crack accelerator. Preventing cascading failures
 is the very key to resilience. The most effective patterns to combat cascading failures are Circuit Breaker and Timeouts.
@@ -261,3 +285,34 @@ A cascading failure happens after something else has already gone wrong.
 Circuit Breaker protects your system by avoiding calls out to the troubled
 integration point. Using Timeouts ensures that you can come back from
 a call out to the troubled point.
+
+---
+
+### Heap Memory (pg 52)
+
+One such hard limit is memory available, particularly in interpreted or managed code languages. Excess traffic can stress the memory system in several ways. Assume you use memory-based sessions, the session stays resident in memory for a certain length of time after the last request from that user.
+
+During that dead time, the session still occupies valuable memory. Every object you put into the session sits there in memory, tying up precious bytes that could be serving some other user.
+
+##### Off-Heap Memory, Off-Host Memory
+
+Another effective way to deal with per-user memory is to farm it out to a dif-
+ferent process. Instead of keeping it inside the heap—that is, inside the address
+space of your server’s process—move it out to some other process. Memcached
+is a great tool for this.3 It’s essentially an in-memory key-value store that you
+can put on a different machine or spread across several machines.
+
+Redis is another popular tool for moving memory out of your process.4 It’s a
+fast “data structure server” that lives in a space between cache and database.
+Many systems use Redis to hold session data instead of keeping it in memory
+or in a relational database.
+
+Any  of  these  approaches  exercise  a  trade-off  between  total  addressable
+memory  size  and  latency  to  access  it.  This  notion  of  memory  hierarchy  is
+ranked  by  size  and  distance.  Registers  are  fastest  and  closest  to  the  CPU,
+followed by cache, local memory, disk, tape, and so on. On one hand, networks
+have gotten fast enough that “someone else’s memory” can be faster to access
+than local disk. Your application is better off making a remote call to get a
+value than reading it from storage. On the other hand, local memory is still
+faster than remote memory. There’s no one-size-fits-all answer.
+
